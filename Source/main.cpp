@@ -10,8 +10,97 @@
 
 #include <QStandardItem>
 #include <QFileSystemModel>
+#include <QFileDialog>
+//#include <QtSql/QSqlTableModel>
+//#include <QtSql/QSqlRecord>
+//#include <QtSql/QSqlField>
+#include <QTableView>
 
 #include <QListView>
+
+#include <string>
+
+#include <stdint.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+
+
+#include <vlc/vlc.h>
+
+#include "Library.hpp"
+#include "MusicPlayer.hpp"
+
+
+namespace fs = std::experimental::filesystem;
+
+// Our boy Nick gave us this.
+void SetDarkTheme(QApplication& app)
+{
+  app.setStyle(QStyleFactory::create("Fusion"));
+
+  QPalette darkPalette;
+  darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+  darkPalette.setColor(QPalette::WindowText, Qt::white);
+  darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+  darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+  darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+  darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+  darkPalette.setColor(QPalette::Text, Qt::white);
+  darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+  darkPalette.setColor(QPalette::ButtonText, Qt::white);
+  darkPalette.setColor(QPalette::BrightText, Qt::red);
+  darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+
+  darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+  darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+
+  app.setPalette(darkPalette);
+  app.setStyleSheet("QToolTip { color: #101010; background-color: #2a82da; border: 1px solid white; }");
+}
+
+namespace Environment
+{
+  constexpr bool Debug()
+  {
+    #ifdef NDEBUG
+        return false;
+    #else
+        return true;
+    #endif
+  }
+
+  constexpr bool Release()
+  {
+    return !Debug();
+  }
+
+  constexpr bool x64()
+  {  // Check windows
+    #if _WIN32 || _WIN64
+      #if _WIN64
+        return true;
+      #else
+        return false;
+      #endif
+    #endif
+
+        // Check GCC
+    #if __GNUC__
+      #if __x86_64__ || __ppc64__
+        return true;
+      #else
+        return false;
+      #endif
+    #endif
+  }
+
+  constexpr bool x86()
+  {
+    return !x64();
+  }
+}
+
 
 
 void MakeTreeDockables(QMainWindow *window, Qt::DockWidgetArea area, QAbstractItemModel *model)
@@ -38,13 +127,45 @@ void MakeTreeDockables(QMainWindow *window, Qt::DockWidgetArea area, QAbstractIt
   window->addDockWidget(area, dock);
 }
 
-int main(int argc, char *argv[])
+class FileMenu : public QMenu
 {
+public:
+
+  FileMenu(QWidget *aParent, Library *aLibrary)
+    : QMenu("Files", aParent)
+    , mLibrary(aLibrary)
+  {
+    auto scanAction = new QAction("Scan", this);
+    this->connect(scanAction, &QAction::triggered, this, &FileMenu::ScanLibrary);
+    this->addAction(scanAction);
+  }
+
+  void ScanLibrary()
+  {
+    fs::path dir = QFileDialog::getExistingDirectory().toStdString();
+    mLibrary->ScanLibrary(dir);
+  }
+
+private:
+
+  Library *mLibrary;
+};
+
+int main()
+{
+  MusicPlayer player;
+  player.SwitchSong("file:///C:/Users/playm/Desktop/Mouth Moods/14 T.I.M.E..m4a");
+  player.Play();
+
   QCoreApplication::addLibraryPath("./");
   QCoreApplication::addLibraryPath("C:/Qt/5.8/msvc2015_64/bin");
 
+  int argc = 0;
+
   // Unsure if required.
-  QApplication app(argc, argv);
+  QApplication app{ argc, nullptr };
+
+  SetDarkTheme(app);
 
   // Make a window. This type has support for docking and gives a 
   // central window in the middle of the docking panels that doesn't move.
@@ -72,36 +193,43 @@ int main(int argc, char *argv[])
   // through them.
   centralTabs->setUsesScrollButtons(true);
 
-  // Add tab options for the menu bar layer.
-  QMenu* fileMenu = new QMenu("File", menuTabs);
-  fileMenu->addMenu(new QMenu("Open"));
+  auto library = std::make_unique<Library>(&window);
 
-  menuTabs->addMenu(fileMenu);
+  if (fs::exists("Library.txt"))
+  {
+    library->LoadLibrary("Library.txt");
+  }
+
+  // Add tab options for the menu bar layer.
+  menuTabs->addMenu(new FileMenu(menuTabs, library.get()));
 
   // Some text editors for testing.
-  auto listView = new QListView(centralTabs);
+  QTableView *libraryTable = new QTableView(centralTabs);
+  libraryTable->setModel(library.get());
+  libraryTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  libraryTable->show();
 
-  centralTabs->addTab(listView, "Library");
+  centralTabs->addTab(libraryTable, "Library");
 
   // Throwing some data into a tree view.
   QStandardItemModel *treeModel = new QStandardItemModel(&window);
   QStandardItem *parentItem = treeModel->invisibleRootItem();
-  for (int i = 0; i < 4; ++i)
-  {
-    QStandardItem *item = new QStandardItem(QString("item %0").arg(i));
-    parentItem->appendRow(item);
-    parentItem = item;
-  }
+  
+  QStandardItem *libraryItem = new QStandardItem(QString("Library"));
+  parentItem->appendRow(libraryItem);
 
-  MakeTreeDockables(&window, Qt::RightDockWidgetArea, treeModel);
+  libraryItem->appendRow(new QStandardItem(QString("Artists")));
+  libraryItem->appendRow(new QStandardItem(QString("Albums")));
+  libraryItem->appendRow(new QStandardItem(QString("Songs")));
 
-  // Shows some files off in a tree view.
-  //QFileSystemModel *fileModel = new QFileSystemModel;
-  //fileModel->setRootPath(QDir::currentPath());
-  //
-  //MakeTreeDockables(window, Qt::BottomDockWidgetArea, fileModel);
+  QStandardItem *playlists = new QStandardItem(QString("Playlists"));
+  parentItem->appendRow(playlists);
+
+  MakeTreeDockables(&window, Qt::LeftDockWidgetArea, treeModel);
 
   window.show();
 
-  return app.exec();
+  app.exec();
+
+  return 0;
 }

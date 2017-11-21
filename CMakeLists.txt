@@ -12,10 +12,11 @@ Project(JoshPlayer CXX C)
 ################################################################################
 # Set up some variables that we'll be able to access anywhere.
 ################################################################################
-Set(CMake_Include          ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-Set(Dependencies_Root      ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies)
-Set(JoshPlayer_Binary_Dir  ${CMAKE_CURRENT_SOURCE_DIR}/Output/Binary)
-Set(JoshPlayer_Library_Dir ${CMAKE_CURRENT_SOURCE_DIR}/Output/Library)
+Set(Repo_Root               ${CMAKE_CURRENT_SOURCE_DIR})
+Set(CMake_Include          ${Repo_Root}/cmake)
+Set(Dependencies_Root      ${Repo_Root}/Dependencies)
+Set(JoshPlayer_Binary_Dir  ${Repo_Root}/Output/Binary)
+Set(JoshPlayer_Library_Dir ${Repo_Root}/Output/Library)
 
 ################################################################################
 # Path to modules for finding external libraries.
