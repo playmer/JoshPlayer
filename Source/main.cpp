@@ -212,6 +212,10 @@ int main()
   // Some text editors for testing.
   QTableView *libraryTable = new QTableView(centralTabs);
   libraryTable->setModel(library.get());
+  libraryTable->setAlternatingRowColors(true);
+  libraryTable->setCornerButtonEnabled(false);
+  libraryTable->setSortingEnabled(true);
+  libraryTable->setWordWrap(false);
   libraryTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
   libraryTable->show();
 
