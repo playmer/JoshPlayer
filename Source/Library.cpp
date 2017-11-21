@@ -214,7 +214,8 @@ void Library::InitializeModel()
 
 void Library::ParseFiles(std::vector<fs::path> &aFiles)
 {
-  libvlc_instance_t *instance = libvlc_new(0, nullptr);
+  auto args = "-vvv";
+  libvlc_instance_t *instance = libvlc_new(1, &args);
 
   std::string u8Path;
   std::string u8Extension;
@@ -239,12 +240,16 @@ void Library::ParseFiles(std::vector<fs::path> &aFiles)
 
     std::string path{ "file:///" };
     path += u8Path;
+
+    printf("VLC_START_PARSE\n");
     libvlc_media_t *media = libvlc_media_new_path(instance, path.c_str());
     if (nullptr == media)
     {
       printf("Media path error: %s, %s\n", u8Path.c_str(), libvlc_errmsg());
       continue;
     }
+
+    libvlc_clearerr();
 
     libvlc_media_parse(media);
 
@@ -262,6 +267,8 @@ void Library::ParseFiles(std::vector<fs::path> &aFiles)
     std::string_view artist = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Artist));
     std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
     std::string trackId = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_TrackNumber)).data();
+
+    printf("VLC_END_PARSE\n");
 
     long long id = 0;
       
@@ -334,7 +341,7 @@ void Library::ParseArtist(std::string_view aArtist)
 
 QVariant Library::data(const QModelIndex &index, int role) const
 {
-  printf("Data %d\n", mThrash++);
+  //printf("Data %d\n", mThrash++);
 
   if (!index.isValid())
   {
@@ -431,7 +438,7 @@ Qt::ItemFlags Library::flags(const QModelIndex &index) const
     return Qt::ItemIsEnabled;
   }
 
-  return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+  return QAbstractTableModel::flags(index);
 }
 
 bool Library::setData(const QModelIndex &index, const QVariant &value, int role)

@@ -153,10 +153,6 @@ private:
 
 int main()
 {
-  MusicPlayer player;
-  player.SwitchSong("file:///C:/Users/playm/Desktop/Mouth Moods/14 T.I.M.E..m4a");
-  player.Play();
-
   QCoreApplication::addLibraryPath("./");
   QCoreApplication::addLibraryPath("C:/Qt/5.8/msvc2015_64/bin");
 
@@ -181,10 +177,20 @@ int main()
   QTabWidget *centralTabs = new QTabWidget(&window);
   window.setCentralWidget(centralTabs);
 
+
+
   // Adding a menuTab layer for menu options.
   QMenuBar *menuTabs = new QMenuBar(centralTabs);
   window.setMenuBar(menuTabs);
-  
+
+
+  QToolBar *toolTabs = new QToolBar(centralTabs);
+  window.addToolBar(toolTabs);
+
+  MusicPlayer player{ toolTabs };
+  player.SwitchSong("file:///C:/Users/playm/Desktop/Mouth Moods/14 T.I.M.E..m4a");
+  player.Play();
+    
   // You can move the tabs around.
   centralTabs->setMovable(true);
   // Tabs get close buttons.

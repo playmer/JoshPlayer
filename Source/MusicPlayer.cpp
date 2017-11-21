@@ -1,3 +1,5 @@
+#include "QAction"
+
 #include "MusicPlayer.hpp"
 
 
@@ -7,15 +9,28 @@ static std::unique_ptr<tTo> static_unique_pointer_cast(std::unique_ptr<tFrom> &&
   return std::unique_ptr<tTo>{static_cast<tTo*>(aValue.release())};
 }
 
-MusicPlayer::MusicPlayer()
-  : mClosing(false)
+MusicPlayer::MusicPlayer(QToolBar *aParent)
+  : QWidget(aParent)
+  , mClosing(false)
 {
-  mThread = std::make_unique<std::thread>(MusicThread, this);
-
   /* Load the VLC engine */
   mInstance = libvlc_new(0, nullptr);
 
   mPlayer = libvlc_media_player_new(mInstance);
+
+  mThread = std::make_unique<std::thread>(MusicThread, this);
+
+  auto playAction = new QAction("Play", this);
+  this->connect(playAction, &QAction::triggered, this, &MusicPlayer::Play);
+  aParent->addAction(playAction);
+
+  auto pauseAction = new QAction("Pause", this);
+  this->connect(pauseAction, &QAction::triggered, this, &MusicPlayer::Pause);
+  aParent->addAction(pauseAction);
+
+  auto scanAction = new QAction("Stop", this);
+  this->connect(scanAction, &QAction::triggered, this, &MusicPlayer::Stop);
+  aParent->addAction(scanAction);
 }
 
 MusicPlayer::~MusicPlayer()

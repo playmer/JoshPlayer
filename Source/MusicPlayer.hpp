@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QToolBar>
+#include <QWidget>
+
 #include <vlc/vlc.h>
 
 #include <memory>
@@ -7,10 +10,10 @@
 #include <thread>
 #include <string_view>
 
-class MusicPlayer
+class MusicPlayer : public QWidget
 {
 public:
-  MusicPlayer();
+  MusicPlayer(QToolBar *aParent);
   ~MusicPlayer();
 
   void Play();
