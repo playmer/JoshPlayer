@@ -1,6 +1,7 @@
 #include <vlc/vlc.h>
 
 #include <qprogressdialog.h>
+#include <QTableView>
 
 
 #include "Library.hpp"
@@ -10,9 +11,12 @@
 
 using namespace std::literals::chrono_literals;
 
-Library::Library(QMainWindow *aMainWindow)
+Library::Library(QMainWindow *aMainWindow, QTableView *aView, MusicPlayer *aMusicPlayer)
   : mMainWindow (aMainWindow)
+  , mView(aView)
+  , mMusicPlayer(aMusicPlayer)
 {
+  this->connect(mView, &QTableView::doubleClicked, this, &Library::PlayTrack);
 }
 
 // Get* will create an Artist if artist doesn't exist.
@@ -125,8 +129,30 @@ void Library::LoadLibrary(std::string aPath)
   }
 
   ParseFiles(files);
+}
 
-  InitializeModel();
+
+void Library::PlayTrack(const QModelIndex &aIndex)
+{
+  if (!aIndex.isValid())
+  {
+    return;
+  }
+
+  if (aIndex.row() >= mTracks.size() || aIndex.row() < 0)
+  {
+    return;
+  }
+
+  if (aIndex.column() >= 5 || 0 > aIndex.column())
+  {
+    return;
+  }
+
+  auto &track = mTracks[aIndex.row()];
+
+  mMusicPlayer->SwitchSong(track->mLocation);
+  mMusicPlayer->Play();
 }
 
 void Library::ScanLibrary(fs::path aPath)
@@ -142,10 +168,6 @@ void Library::ScanLibrary(fs::path aPath)
     
   std::ofstream libraryFile;
   libraryFile.open(logFile, std::ios::out | std::ios::trunc | std::ios::binary);
-
-  //log << 0xEF;
-  //log << 0xBB;
-  //log << 0xBF;
 
   fs::path path;
   fs::path toPath;
@@ -186,46 +208,6 @@ void Library::ScanLibrary(fs::path aPath)
   libraryFile.close();
 }
 
-void Library::InitializeModel()
-{
-  //mModel.setTable("Library");
-  //mModel.setEditStrategy(QSqlTableModel::OnManualSubmit);
-  //mModel.select();
-  //
-  //
-  //mModel.setHeaderData(0, Qt::Horizontal, "Name");
-  //mModel.setHeaderData(1, Qt::Horizontal, "Kind");
-  //mModel.setHeaderData(2, Qt::Horizontal, "File Type");
-  //mModel.setHeaderData(3, Qt::Horizontal, "Location");
-  //mModel.setHeaderData(4, Qt::Horizontal, "Id");
-  //
-  //
-  //int row = 1;
-  //for (auto &trackIt : mTracks)
-  //{
-  //  auto &track = trackIt.second;
-  //  QSqlRecord record;
-  //
-  //  QSqlField field;
-  //    
-  //  mModel.insertRows(row, 1);
-  //  bool t1 = mModel.setData(mModel.index(row, 0), track->mName.c_str());
-  //  bool t2 = mModel.setData(mModel.index(row, 1), track->mKind.c_str());
-  //  bool t3 = mModel.setData(mModel.index(row, 2), track->mFileType.c_str());
-  //  bool t4 = mModel.setData(mModel.index(row, 3), track->mLocation.c_str());
-  //  bool t5 = mModel.setData(mModel.index(row, 4), track->mId);
-  //  mModel.submitAll();
-  //
-  //  ++row;
-  //}
-  //
-  //for (int i = 0; i < mModel.rowCount(); ++i) {
-  //  auto name = mModel.record(i).value("Name").toString().toStdString();
-  //  printf("%s", name.c_str());
-  //}
-}
-
-
 
 //typedef void (*libvlc_log_cb)(void *data, int level, const libvlc_log_t *ctx,
 //                              const char *fmt, va_list args);
@@ -263,61 +245,10 @@ void Library::ParseFiles(std::vector<fs::path> &aFiles)
     std::string path{ "file:///" };
     path += u8Path;
 
-    //printf("VLC_START_PARSE\n");
-    //libvlc_media_t *media = libvlc_media_new_location(instance, path.c_str());
-    //if (nullptr == media)
-    //{
-    //  printf("Media path error: %s, %s\n", u8Path.c_str(), libvlc_errmsg());
-    //  continue;
-    //}
-    //
-    //libvlc_clearerr();
-    //
-    //libvlc_media_parse(media);
-    //
-    //
-    //auto safeStrView = [](const char *aString)
-    //{
-    //  if (nullptr == aString)
-    //  {
-    //    return std::string_view{"", 0};
-    //  }
-    //
-    //  return std::string_view{ aString };
-    //};
-    //
-    //std::string_view title = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Title));
-    //std::string_view artist = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Artist));
-    //std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
-    //std::string trackId = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_TrackNumber)).data();
-
-    //printf("VLC_END_PARSE\n");
-
-    //long long id = 0;
-    //  
-    //if (0 != trackId.size())
-    //{
-    //  id = std::stoll(trackId);
-    //}
-
-    // TODO (Josh):
-    // Should let us get codec, but the FourCC appears to only be for video?
-    // Requires further research.
-    //libvlc_media_track_info_t *info;
-    //libvlc_media_get_tracks_info(media, &info);
-    //info->i_codec;
-
     mTracks.emplace_back(std::make_unique<Track>("",
                                                  "",          // Should be codec.
                                                  u8Extension,
                                                  u8Path));
-    //auto track = mTracks.back().get();
-    //track->mId = id;
-    //
-    //ParseAlbum(album, artist, track);
-    //ParseArtist(artist);
-
-    //libvlc_media_release(media);
 
     this->dataChanged(this->index(mTracks.size() - 1, 0), this->index(mTracks.size() - 1, 4));
 
@@ -431,29 +362,15 @@ QVariant Library::data(const QModelIndex &index, int role) const
     //std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
 
 
-
-
-    libvlc_media_track_t **elementaryTracks;
-    auto number = libvlc_media_tracks_get(media, &elementaryTracks);
-
-    for (size_t i = 0; i < number; ++i)
-    {
-      auto track = elementaryTracks[i];
-    }
-
-    libvlc_media_tracks_release(elementaryTracks, number);
-
-    if (nullptr != libvlc_errmsg())
-    {
-      printf("Media path error: %s, %s\n", track->mLocation.c_str(), libvlc_errmsg());
-      return QVariant();
-    }
-
-
-
-
-
-
+    //libvlc_media_track_t **elementaryTracks;
+    //auto number = libvlc_media_tracks_get(media, &elementaryTracks);
+    //
+    //for (size_t i = 0; i < number; ++i)
+    //{
+    //  auto track = elementaryTracks[i];
+    //}
+    //
+    //libvlc_media_tracks_release(elementaryTracks, number);
 
     std::string trackId = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_TrackNumber)).data();
 

@@ -177,12 +177,9 @@ int main()
   QTabWidget *centralTabs = new QTabWidget(&window);
   window.setCentralWidget(centralTabs);
 
-
-
   // Adding a menuTab layer for menu options.
   QMenuBar *menuTabs = new QMenuBar(centralTabs);
   window.setMenuBar(menuTabs);
-
 
   QToolBar *toolTabs = new QToolBar(centralTabs);
   window.addToolBar(toolTabs);
@@ -197,7 +194,10 @@ int main()
   // through them.
   centralTabs->setUsesScrollButtons(true);
 
-  auto library = std::make_unique<Library>(&window);
+
+  QTableView *libraryTable = new QTableView(centralTabs);
+
+  auto library = std::make_unique<Library>(&window, libraryTable, &player);
 
   if (fs::exists("Library.txt"))
   {
@@ -207,8 +207,6 @@ int main()
   // Add tab options for the menu bar layer.
   menuTabs->addMenu(new FileMenu(menuTabs, library.get()));
 
-  // Some text editors for testing.
-  QTableView *libraryTable = new QTableView(centralTabs);
   libraryTable->setModel(library.get());
   libraryTable->setAlternatingRowColors(true);
   libraryTable->setCornerButtonEnabled(false);

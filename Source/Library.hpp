@@ -11,6 +11,10 @@
 #include <qmainwindow.h>
 #include <QAbstractTableModel>
 
+#include <QTableView>
+
+#include "MusicPlayer.hpp"
+
 namespace fs = std::experimental::filesystem;
 
 class Track
@@ -93,9 +97,7 @@ public:
 
 struct Library : public QAbstractTableModel
 {
-  Library(QMainWindow *aMainWindow);
-
-
+  Library(QMainWindow *aMainWindow, QTableView *mView, MusicPlayer *mMusicPlayer);
   Library(Library const &aTrack) = delete;
 
   // Get* will create an Artist if artist doesn't exist.
@@ -110,10 +112,13 @@ struct Library : public QAbstractTableModel
 
   void LoadLibrary(std::string aPath);
   void ScanLibrary(fs::path aPath);
-  void InitializeModel();
   void ParseFiles(std::vector<fs::path> &aFiles);
   void ParseAlbum(std::string_view aAlbum, std::string_view aArtist, Track *aTrack);
   void ParseArtist(std::string_view aArtist);
+
+
+  void PlayTrack(const QModelIndex &mIndex);
+
 
 
   int rowCount(const QModelIndex &) const
@@ -149,5 +154,7 @@ struct Library : public QAbstractTableModel
 
   QMainWindow *mMainWindow;
   libvlc_instance_t *mInstance;
+  QTableView *mView;
+  MusicPlayer *mMusicPlayer;
   //QSqlTableModel mModel;
 };

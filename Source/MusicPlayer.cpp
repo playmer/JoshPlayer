@@ -177,7 +177,7 @@ void MusicPlayer::SwitchSong(std::string_view aSong)
   std::string path{ "file:///" };
   path += aSong;
 
-  auto switchSong = std::make_unique<Actions::SwitchSong>(mInstance, mPlayer, aSong);
+  auto switchSong = std::make_unique<Actions::SwitchSong>(mInstance, mPlayer, path);
   std::lock_guard<std::mutex> guard{ mActionsMutex };
   mActions.emplace_back(static_unique_pointer_cast<MusicPlayer::Action>(std::move(switchSong)));
 }
