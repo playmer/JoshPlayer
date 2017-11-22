@@ -188,9 +188,7 @@ int main()
   window.addToolBar(toolTabs);
 
   MusicPlayer player{ toolTabs };
-  player.SwitchSong("file:///C:/Users/playm/Desktop/Mouth Moods/14 T.I.M.E..m4a");
-  player.Play();
-    
+      
   // You can move the tabs around.
   centralTabs->setMovable(true);
   // Tabs get close buttons.
@@ -217,6 +215,7 @@ int main()
   libraryTable->setSortingEnabled(true);
   libraryTable->setWordWrap(false);
   libraryTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  libraryTable->setSelectionBehavior(QAbstractItemView::SelectRows);
   libraryTable->show();
 
   centralTabs->addTab(libraryTable, "Library");

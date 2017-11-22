@@ -25,6 +25,7 @@ public:
     , mKind(aKind)
     , mFileType(aFileType)
     , mLocation(aLocation)
+    , mMedia(nullptr)
   {
   }
 
@@ -37,6 +38,8 @@ public:
     mKind = "";
     mFileType = "";
     mLocation = "";
+    mId = 0;
+    mMedia = nullptr;
   }
 
   std::string mName;
@@ -44,6 +47,7 @@ public:
   std::string mFileType;
   std::string mLocation;
   int64_t mId;
+  libvlc_media_t *mMedia;
 };
 
 class Playlist
@@ -144,5 +148,6 @@ struct Library : public QAbstractTableModel
   mutable int mThrash = 0;
 
   QMainWindow *mMainWindow;
+  libvlc_instance_t *mInstance;
   //QSqlTableModel mModel;
 };
