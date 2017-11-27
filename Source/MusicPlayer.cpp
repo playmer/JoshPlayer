@@ -31,6 +31,9 @@ MusicPlayer::MusicPlayer(QToolBar *aParent)
   auto scanAction = new QAction("Stop", this);
   this->connect(scanAction, &QAction::triggered, this, &MusicPlayer::Stop);
   aParent->addAction(scanAction);
+
+  auto manager = libvlc_media_player_event_manager(mPlayer);
+  libvlc_event_attach(manager, libvlc_MediaPlayerEndReached, &MusicPlayer::MediaEndReached, this);
 }
 
 MusicPlayer::~MusicPlayer()
@@ -142,6 +145,7 @@ namespace Actions
 
       libvlc_media_player_set_media(mPlayer, media);
       libvlc_media_release(media);
+      libvlc_media_player_play(mPlayer);
     }
 
     libvlc_instance_t *mInstance;
@@ -149,6 +153,54 @@ namespace Actions
     std::string mLocation;
   };
 
+
+
+  class PlaylistSwitch : public MusicPlayer::Action
+  {
+  public:
+    PlaylistSwitch(libvlc_instance_t *aInstance,
+      libvlc_media_player_t *aPlayer,
+      std::string_view aLocation)
+      : mInstance(aInstance)
+      , mPlayer(aPlayer)
+      , mLocation(aLocation)
+    {
+
+    }
+
+    void Invoke() override
+    {
+      libvlc_media_t *media = libvlc_media_new_location(mInstance, mLocation.c_str());
+
+      if (nullptr == media)
+      {
+        printf("Switch Error: %s, %s\n", mLocation.c_str(), libvlc_errmsg());
+        return;
+      }
+
+      libvlc_media_player_set_media(mPlayer, media);
+      libvlc_media_release(media);
+      libvlc_media_player_play(mPlayer);
+    }
+
+    libvlc_instance_t *mInstance;
+    libvlc_media_player_t *mPlayer;
+    std::string mLocation;
+  };
+
+
+}
+
+void MusicPlayer::MediaEndReached(const struct libvlc_event_t *aEvent, void *aSelf)
+{
+  auto self = static_cast<MusicPlayer*>(aSelf);
+  std::lock_guard<std::mutex> guard{ self->mActionsMutex };
+
+  if (false == self->mPlaylistActions.empty())
+  {
+    self->mPlaylistActions.front()->Invoke();
+    self->mPlaylistActions.erase(self->mPlaylistActions.begin());
+  }
 }
 
 void MusicPlayer::Play()
@@ -174,12 +226,17 @@ void MusicPlayer::Stop()
 
 void MusicPlayer::SwitchSong(std::string_view aSong)
 {
-  std::string path{ "file:///" };
-  path += aSong;
-
-  auto switchSong = std::make_unique<Actions::SwitchSong>(mInstance, mPlayer, path);
+  auto switchSong = std::make_unique<Actions::SwitchSong>(mInstance, mPlayer, aSong);
   std::lock_guard<std::mutex> guard{ mActionsMutex };
   mActions.emplace_back(static_unique_pointer_cast<MusicPlayer::Action>(std::move(switchSong)));
+  mPlaylistActions.clear();
+}
+
+void MusicPlayer::AddToPlaylist(std::string_view aSong)
+{
+  auto switchSong = std::make_unique<Actions::PlaylistSwitch>(mInstance, mPlayer, aSong);
+  std::lock_guard<std::mutex> guard{ mActionsMutex };
+  mPlaylistActions.emplace_back(static_unique_pointer_cast<MusicPlayer::Action>(std::move(switchSong)));
 }
 
 void MusicPlayer::MusicThread(MusicPlayer *aPlayer)

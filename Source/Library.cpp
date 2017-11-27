@@ -2,12 +2,13 @@
 
 #include <qprogressdialog.h>
 #include <QTableView>
-
-
-#include "Library.hpp"
+#include <QMessageBox>
 
 #include <chrono>
 #include <thread>
+#include <iostream>
+
+#include "Library.hpp"
 
 using namespace std::literals::chrono_literals;
 
@@ -127,10 +128,7 @@ void Library::LoadLibrary(std::string aPath)
 
     files.emplace_back(path);
   }
-
-  ParseFiles(files);
 }
-
 
 void Library::PlayTrack(const QModelIndex &aIndex)
 {
@@ -144,7 +142,7 @@ void Library::PlayTrack(const QModelIndex &aIndex)
     return;
   }
 
-  if (aIndex.column() >= 5 || 0 > aIndex.column())
+  if (aIndex.column() >= 4 || 0 > aIndex.column())
   {
     return;
   }
@@ -152,58 +150,292 @@ void Library::PlayTrack(const QModelIndex &aIndex)
   auto &track = mTracks[aIndex.row()];
 
   mMusicPlayer->SwitchSong(track->mLocation);
-  mMusicPlayer->Play();
+
+  auto ptrTitle = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Title);
+  printf("ptrTitle: %s\n", ptrTitle);
+  auto ptrArtist = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Artist);
+  printf("ptrArtist: %s\n", ptrArtist);
+  auto ptrGenre = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Genre);
+  printf("ptrGenre: %s\n", ptrGenre);
+  auto ptrCopyright = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Copyright);
+  printf("ptrCopyright: %s\n", ptrCopyright);
+  auto ptrAlbum = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Album);
+  printf("ptrAlbum: %s\n", ptrAlbum);
+  auto ptrTrackNumber = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_TrackNumber);
+  printf("ptrTrackNumber: %s\n", ptrTrackNumber);
+  auto ptrDescription = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Description);
+  printf("ptrDescription: %s\n", ptrDescription);
+  auto ptrRating = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Rating);
+  printf("ptrRating: %s\n", ptrRating);
+  auto ptrDate = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Date);
+  printf("ptrDate: %s\n", ptrDate);
+  auto ptrSetting = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Setting);
+  printf("ptrSetting: %s\n", ptrSetting);
+  auto ptrURL = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_URL);
+  printf("ptrURL: %s\n", ptrURL);
+  auto ptrLanguage = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Language);
+  printf("ptrLanguage: %s\n", ptrLanguage);
+  auto ptrNowPlaying = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_NowPlaying);
+  printf("ptrNowPlaying: %s\n", ptrNowPlaying);
+  auto ptrPublisher = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Publisher);
+  printf("ptrPublisher: %s\n", ptrPublisher);
+  auto ptrEncodedBy = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_EncodedBy);
+  printf("ptrEncodedBy: %s\n", ptrEncodedBy);
+  auto ptrArtworkURL = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_ArtworkURL);
+  printf("ptrArtworkURL: %s\n", ptrArtworkURL);
+  auto ptrTrackID = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_TrackID);
+  printf("ptrTrackID: %s\n", ptrTrackID);
+  auto ptrTrackTotal = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_TrackTotal);
+  printf("ptrTrackTotal: %s\n", ptrTrackTotal);
+  auto ptrDirector = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Director);
+  printf("ptrDirector: %s\n", ptrDirector);
+  auto ptrSeason = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Season);
+  printf("ptrSeason: %s\n", ptrSeason);
+  auto ptrEpisode = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Episode);
+  printf("ptrEpisode: %s\n", ptrEpisode);
+  auto ptrShowName = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_ShowName);
+  printf("ptrShowName: %s\n", ptrShowName);
+  auto ptrActors = libvlc_media_get_meta(track->mMedia, libvlc_meta_t::libvlc_meta_Actors);
+  printf("ptrActors: %s\n", ptrActors);
 }
 
 void Library::ScanLibrary(fs::path aPath)
 {
-  std::set<fs::path> changeToMp3{ ".mp3~2", ".MP3", ".Mp3" };
-  std::set<fs::path> move{ ".mp3", ".flac" };
-  fs::path m4a{ ".m4a" };
-  fs::path mp3{ ".mp3" };
-
   std::vector<fs::path> files;
 
-  fs::path logFile{ "Library.txt" };
+  {
+    std::set<fs::path> acceptableExtensions{ ".mp3~2", ".MP3", ".Mp3", ".mp3", ".flac", ".m4a", ".wav", ".mov", ".m4v" };
+
+    std::set<fs::path> changeToMp3{ ".mp3~2", ".MP3", ".Mp3" };
+    std::set<fs::path> move{ ".mp3", ".flac" };
+    fs::path m4a{ ".m4a" };
+    fs::path mp3{ ".mp3" };
+
+
+    fs::path path;
+    fs::path toPath;
+    fs::path extension;
+
+    std::set<fs::path> unexpectedExtensions;
+
+    auto messageBox = new QMessageBox(QMessageBox::Information, 
+                                      "Scanning Folder",
+                                      "This may take some time...",
+                                      QMessageBox::NoButton, 
+                                      mMainWindow);
+
+    for (auto& it : fs::recursive_directory_iterator(aPath))
+    {
+      path = it;
+      extension = path.extension();
+
+      if (fs::is_directory(path) ||
+          extension.empty())
+      {
+        continue;
+      }
+
+      if (acceptableExtensions.find(extension) == acceptableExtensions.end())
+      {
+        unexpectedExtensions.emplace(extension);
+        continue;
+      }
     
+      // TODO (Josh): We should ask if they want to do normalization
+      //toPath = path;
+      //
+      //
+      //extension = path.extension();
+      //
+      //if (extension == m4a)
+      //{
+      //
+      //}
+      //
+      //if (changeToMp3.find(extension) != changeToMp3.end())
+      //{
+      //  toPath.replace_extension(mp3);
+      //}
+
+      files.emplace_back(path);
+    }
+
+    std::cout << "Found some unexpected extension types in the folder scanned, "
+                 "they were not added to the library: \n";
+    for (auto &unexpectedExtension : unexpectedExtensions)
+    {
+      std::cout << unexpectedExtension << '\n';
+    }
+  }
+
+
+
+
+
+
+
+  fs::path logFile{ "Library.txt" };
+
   std::ofstream libraryFile;
   libraryFile.open(logFile, std::ios::out | std::ios::trunc | std::ios::binary);
 
-  fs::path path;
-  fs::path toPath;
-  fs::path extension;
 
-  for (auto& it : fs::recursive_directory_iterator(aPath))
+
+
+
   {
-    path = it;
-
-    if (fs::is_directory(path))
+    struct Thread
     {
-      continue;
+      Thread(std::vector<fs::path> &&aFiles)
+        : mFiles (std::move(aFiles))
+        , mThread(ParseFiles, this)
+      {
+
+      }
+
+      static void ParseFiles(Thread *aSelf)
+      {
+        auto instance = libvlc_new(0, nullptr);
+        aSelf->mTracks.reserve(aSelf->mFiles.size());
+
+        for (auto &file : aSelf->mFiles)
+        {
+          std::string path{ "file:///" };
+          path += file.u8string();
+          auto extension{ file.extension().u8string() };
+          auto track = std::make_unique<Track>(extension, path);
+          track->mMedia = libvlc_media_new_location(instance, path.c_str());
+          libvlc_media_parse_async(track->mMedia);
+
+          aSelf->mTracks.emplace_back(std::move(track));
+        }
+
+        for (auto &track : aSelf->mTracks)
+        {
+          auto media = track->mMedia;
+          track->mMedia = nullptr;
+
+          while (false == libvlc_media_is_parsed(media));
+
+          auto safeStrView = [](const char *aString)
+          {
+            if (nullptr == aString)
+            {
+              return std::string_view{ "", 0 };
+            }
+
+            return std::string_view{ aString };
+          };
+
+          std::string_view title = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Title));
+          track->mTitle = title;
+          std::string_view artist = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Artist));
+          track->mArtistName = artist;
+          std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
+          track->mAlbumName = album;
+
+          std::string trackId = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_TrackNumber)).data();
+
+          long long id = 0;
+
+          if (0 != trackId.size())
+          {
+            id = std::stoll(trackId);
+          }
+
+          libvlc_media_release(media);
+
+          track->mTrackNumber = id;
+
+          track->mParsed = true;
+        }
+
+        libvlc_release(instance);
+      }
+
+      std::vector<std::unique_ptr<Track>> mTracks;
+      std::vector<fs::path> mFiles;
+      std::thread mThread;
+    };
+
+    auto numThreads = std::thread::hardware_concurrency();
+
+    std::vector<std::unique_ptr<Thread>> threads;
+
+    auto totalFiles = files.size();
+
+    if (numThreads > totalFiles)
+    {
+      numThreads = totalFiles;
     }
 
-    // TODO (Josh): We should ask if they want to do normalization
-    //toPath = path;
-    //
-    //
-    //extension = path.extension();
-    //
-    //if (extension == m4a)
-    //{
-    //
-    //}
-    //
-    //if (changeToMp3.find(extension) != changeToMp3.end())
-    //{
-    //  toPath.replace_extension(mp3);
-    //}
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+      std::vector<fs::path> filesForThread;
+
+      auto filesPerThread = totalFiles / numThreads;
+
+      // Unsure if this check is actually needed, but I'm too tired to think of the
+      // integer math around the filesPerThread number and the edge cases therein.
+      if (filesPerThread > files.size())
+      {
+        filesPerThread = files.size();
+      }
+
+      if (i < numThreads - 1)
+      {
+        auto begin = files.end() - filesPerThread;
+        auto end = files.end();
 
 
-    libraryFile << path.u8string() << '\n';
-    files.emplace_back(path);
+        filesForThread.insert(filesForThread.begin(), 
+                              std::make_move_iterator(begin),
+                              std::make_move_iterator(end));
+
+        files.erase(begin, end);
+      }
+      else
+      {
+        filesForThread = std::move(files);
+      }
+
+      threads.emplace_back(std::make_unique<Thread>(std::move(filesForThread)));
+    }
+
+
+    // Join the threads.
+    for (auto &thread : threads)
+    {
+      thread->mThread.join();
+      
+      for (auto &track : thread->mTracks)
+      {
+        libraryFile << track->mLocation << ';' 
+                    << track->mTitle << ';'
+                    << track->mArtistName << ';'
+                    << track->mAlbumName << ';'
+                    << track->mTrackNumber << '\n';
+      }
+    }
   }
 
-  ParseFiles(files);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   libraryFile.close();
 }
@@ -215,62 +447,63 @@ void Library::ScanLibrary(fs::path aPath)
 //LIBVLC_API void libvlc_log_set( libvlc_instance_t *,
 //                                libvlc_log_cb cb, void *data );
 
-void Library::ParseFiles(std::vector<fs::path> &aFiles)
-{
-  //auto args = "-vvv";
-  //libvlc_instance_t *instance = libvlc_new(1, &args);
-  mInstance = libvlc_new(0, NULL);
-
-  std::string u8Path;
-  std::string u8Extension;
-
-  QProgressDialog progress("Parsing folder", "cancel", 0, 100, mMainWindow);
-  progress.setWindowModality(Qt::WindowModal);
-
-  float percentageComplete = 0.0;
-
-  size_t i{ 0 };
-  float size{ static_cast<float>(aFiles.size()) };
-
-  for (auto &file : aFiles)
-  {
-    if (progress.wasCanceled())
-    {
-      return;
-    }
-
-    u8Extension = file.extension().u8string();
-    u8Path = file.generic_u8string();
-
-    std::string path{ "file:///" };
-    path += u8Path;
-
-    mTracks.emplace_back(std::make_unique<Track>("",
-                                                 "",          // Should be codec.
-                                                 u8Extension,
-                                                 u8Path));
-
-    this->dataChanged(this->index(mTracks.size() - 1, 0), this->index(mTracks.size() - 1, 4));
-
-    auto err = libvlc_errmsg();
-
-    if (nullptr != err)
-    {
-      printf("Media path error: %s, %s\n", u8Path.c_str(), libvlc_errmsg());
-    }
-
-    ++i;
-    percentageComplete = i / size;
-
-    if (progress.value() < percentageComplete && percentageComplete != 100)
-    {
-      progress.setValue(static_cast<int>(percentageComplete));
-    }
-  }
-
-  progress.setValue(100);
-  //dataChanged(index, index)
-}
+//void Library::ParseFiles(std::vector<fs::path> &aFiles)
+//{
+//  //auto args = "-vvv";
+//  //libvlc_instance_t *instance = libvlc_new(1, &args);
+//  mInstance = libvlc_new(0, NULL);
+//
+//  std::string u8Path;
+//  std::string u8Extension;
+//
+//  QProgressDialog progress("Parsing folder", "cancel", 0, 100, mMainWindow);
+//  progress.setWindowModality(Qt::WindowModal);
+//
+//  float percentageComplete = 0.0;
+//
+//  size_t i{ 0 };
+//  float size{ static_cast<float>(aFiles.size()) };
+//
+//  for (auto &file : aFiles)
+//  {
+//    if (progress.wasCanceled())
+//    {
+//      return;
+//    }
+//
+//    u8Extension = file.extension().u8string();
+//    u8Path = file.generic_u8string();
+//
+//    std::string path{ "file:///" };
+//    path += u8Path;
+//
+//    auto &track = mTracks.emplace_back(std::make_unique<Track>(u8Extension,
+//                                                               path));
+//
+//    track->mMedia = libvlc_media_new_location(mInstance, path.c_str());
+//
+//    libvlc_media_parse_async(track->mMedia);
+//
+//    this->dataChanged(this->index(mTracks.size() - 1, 0), this->index(mTracks.size() - 1, 4));
+//
+//    auto err = libvlc_errmsg();
+//
+//    if (nullptr != err)
+//    {
+//      printf("Media path error: %s, %s\n", u8Path.c_str(), libvlc_errmsg());
+//    }
+//
+//    ++i;
+//    percentageComplete = i / size;
+//
+//    if (progress.value() < percentageComplete && percentageComplete != 100)
+//    {
+//      progress.setValue(static_cast<int>(percentageComplete));
+//    }
+//  }
+//
+//  progress.setValue(100);
+//}
 
 
 void Library::ParseAlbum(std::string_view aAlbum, std::string_view aArtist, Track *aTrack)
@@ -321,7 +554,7 @@ QVariant Library::data(const QModelIndex &index, int role) const
     return QVariant();
   }
 
-  if (index.column() >= 5 || 0 > index.column())
+  if (index.column() >= 4 || 0 > index.column())
   {
     return QVariant();
   }
@@ -330,21 +563,9 @@ QVariant Library::data(const QModelIndex &index, int role) const
 
   auto media = track->mMedia;
 
-  if (nullptr == media)
+  if (false == track->mParsed)
   {
-    media = libvlc_media_new_location(mInstance, track->mLocation.c_str());
-
-    track->mMedia = media;
-
-    if (nullptr == media)
-    {
-      printf("Media path error: %s, %s\n", track->mLocation.c_str(), libvlc_errmsg());
-      return QVariant();
-    }
-
-    libvlc_clearerr();
-
-    libvlc_media_parse(media);
+    while (false == libvlc_media_is_parsed(media));
 
     auto safeStrView = [](const char *aString)
     {
@@ -357,10 +578,11 @@ QVariant Library::data(const QModelIndex &index, int role) const
     };
 
     std::string_view title = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Title));
-    track->mName = title;
-    //std::string_view artist = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Artist));
-    //std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
-
+    track->mTitle = title;
+    std::string_view artist = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Artist));
+    track->mArtistName = artist;
+    std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
+    track->mAlbumName = album;
 
     //libvlc_media_track_t **elementaryTracks;
     //auto number = libvlc_media_tracks_get(media, &elementaryTracks);
@@ -381,32 +603,27 @@ QVariant Library::data(const QModelIndex &index, int role) const
       id = std::stoll(trackId);
     }
 
-    track->mId = id;
+    track->mTrackNumber = id;
   }
-
-
 
   switch (index.column())
   {
     case 0:
     {
-      return track->mName.c_str();
+      //QString::fromUtf8()
+      return track->mTitle.c_str();
     }
     case 1:
     {
-      return track->mKind.c_str();
+      return track->mArtistName.c_str();
     }
     case 2:
     {
-      return track->mFileType.c_str();
+      return track->mAlbumName.c_str();
     }
     case 3:
     {
-      return track->mLocation.c_str();
-    }
-    case 4:
-    {
-      return track->mId;
+      return track->mTrackNumber;
     }
   }
 
@@ -438,19 +655,15 @@ QVariant Library::headerData(int section, Qt::Orientation orientation, int role)
     }
     case 1:
     {
-      return "Kind";
+      return "Artist";
     }
     case 2:
     {
-      return "File Type";
+      return "Album";
     }
     case 3:
     {
-      return "Location";
-    }
-    case 4:
-    {
-      return "Id";
+      return "Track Number";
     }
   }
 
@@ -496,23 +709,19 @@ bool Library::setData(const QModelIndex &index, const QVariant &value, int role)
   {
     case 0:
     {
-      track->mName = value.toString().toStdString();
+      track->mTitle = value.toString().toStdString();
     }
     case 1:
     {
-      track->mKind.c_str();
+      track->mArtistName.c_str();
     }
     case 2:
     {
-      track->mFileType.c_str();
+      track->mAlbumName.c_str();
     }
     case 3:
     {
-      track->mLocation.c_str();
-    }
-    case 4:
-    {
-      track->mId;
+      track->mTrackNumber;
     }
   }
 

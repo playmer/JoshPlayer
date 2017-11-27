@@ -17,41 +17,44 @@
 
 namespace fs = std::experimental::filesystem;
 
+class Album;
+class Artist;
+
 class Track
 {
 public:
-  template <typename tType1, typename tType2, typename tType3, typename tType4>
-  Track(tType1 &aName,
-        tType2 &aKind,
-        tType3 &aFileType,
-        tType4 &aLocation)
-    : mName(aName)
-    , mKind(aKind)
-    , mFileType(aFileType)
-    , mLocation(aLocation)
-    , mMedia(nullptr)
+  template <typename tType>
+  Track(std::string &&aLibraryLine)
+    : mMedia(nullptr)
+    , mParsed(false)
   {
   }
 
   Track(Track const &aTrack) = delete;
 
-
   Track()
+    : mTrackNumber(0)
+    , mMedia(nullptr)
+    , mParsed(false)
   {
-    mName = "";
-    mKind = "";
-    mFileType = "";
-    mLocation = "";
-    mId = 0;
+    mTrackNumber = 0;
     mMedia = nullptr;
   }
 
-  std::string mName;
-  std::string mKind;
-  std::string mFileType;
-  std::string mLocation;
-  int64_t mId;
+  // Rows that actually display.
+  std::string_view mTitle;
+  std::string_view mArtistName;
+  std::string_view mAlbumName;
+  int64_t mTrackNumber;
+
+  // Utility
+  std::string_view mLocation;
   libvlc_media_t *mMedia;
+  bool mParsed;
+
+  // Future
+  Artist *mArtist;
+  Album *mAlbum;
 };
 
 class Playlist
@@ -112,7 +115,7 @@ struct Library : public QAbstractTableModel
 
   void LoadLibrary(std::string aPath);
   void ScanLibrary(fs::path aPath);
-  void ParseFiles(std::vector<fs::path> &aFiles);
+  //void ParseFiles(std::vector<fs::path> &aFiles);
   void ParseAlbum(std::string_view aAlbum, std::string_view aArtist, Track *aTrack);
   void ParseArtist(std::string_view aArtist);
 
@@ -137,11 +140,6 @@ struct Library : public QAbstractTableModel
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
   bool insertRows(int position, int rows, const QModelIndex &index = QModelIndex()) override;
   bool removeRows(int position, int rows, const QModelIndex &index = QModelIndex()) override;
-
-
-
-
-
 
   // File Location to Track
   std::vector<std::unique_ptr<Track>> mTracks;
