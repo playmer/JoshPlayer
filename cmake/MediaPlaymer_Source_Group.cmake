@@ -1,4 +1,4 @@
-Function(JoshPlayer_Source_Group aRoot aSourceFiles) 
+Function(MediaPlaymer_Source_Group aRoot aSourceFiles) 
 
  # This will determine if the given files are in a folder or not and separate 
  # them on that alone. 

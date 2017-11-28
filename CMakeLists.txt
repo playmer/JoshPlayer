@@ -7,7 +7,7 @@ Set_Property(GLOBAL PROPERTY USE_FOLDERS ON)
 ################################################################################
 # Declaring our Project and it's used languages.
 ################################################################################
-Project(JoshPlayer CXX C)
+Project(MediaPlaymer CXX C)
 
 ################################################################################
 # Set up some variables that we'll be able to access anywhere.
@@ -15,8 +15,8 @@ Project(JoshPlayer CXX C)
 Set(Repo_Root               ${CMAKE_CURRENT_SOURCE_DIR})
 Set(CMake_Include          ${Repo_Root}/cmake)
 Set(Dependencies_Root      ${Repo_Root}/Dependencies)
-Set(JoshPlayer_Binary_Dir  ${Repo_Root}/Output/Binary)
-Set(JoshPlayer_Library_Dir ${Repo_Root}/Output/Library)
+Set(MediaPlaymer_Binary_Dir  ${Repo_Root}/Output/Binary)
+Set(MediaPlaymer_Library_Dir ${Repo_Root}/Output/Library)
 
 ################################################################################
 # Path to modules for finding external libraries.
@@ -27,7 +27,7 @@ Set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${Source_Root}/cmake/modules/")
 ## Includes
 ################################################################################
 Include(${CMake_Include}/AddFile.cmake)
-Include(${CMake_Include}/JoshPlayer_Source_Group.cmake) 
+Include(${CMake_Include}/MediaPlaymer_Source_Group.cmake) 
 
 ################################################################################
 ## Setting compiler warnings based on platform.

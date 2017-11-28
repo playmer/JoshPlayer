@@ -214,8 +214,9 @@ void Library::InitializeModel()
 
 void Library::ParseFiles(std::vector<fs::path> &aFiles)
 {
-  auto args = "-vvv";
-  libvlc_instance_t *instance = libvlc_new(1, &args);
+  //auto args = "-vvv";
+  //libvlc_instance_t *instance = libvlc_new(1, &args);
+  libvlc_instance_t *instance = libvlc_new(0, nullptr);
 
   std::string u8Path;
   std::string u8Extension;
@@ -241,7 +242,7 @@ void Library::ParseFiles(std::vector<fs::path> &aFiles)
     std::string path{ "file:///" };
     path += u8Path;
 
-    printf("VLC_START_PARSE\n");
+    //printf("VLC_START_PARSE\n");
     libvlc_media_t *media = libvlc_media_new_path(instance, path.c_str());
     if (nullptr == media)
     {
@@ -251,7 +252,10 @@ void Library::ParseFiles(std::vector<fs::path> &aFiles)
 
     libvlc_clearerr();
 
-    libvlc_media_parse(media);
+    //libvlc_media_parse(media);
+    libvlc_media_parse_async(media);
+
+    while (false == libvlc_media_is_parsed(media));
 
     auto safeStrView = [](const char *aString)
     {
@@ -268,7 +272,7 @@ void Library::ParseFiles(std::vector<fs::path> &aFiles)
     std::string_view album = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_Album));
     std::string trackId = safeStrView(libvlc_media_get_meta(media, libvlc_meta_t::libvlc_meta_TrackNumber)).data();
 
-    printf("VLC_END_PARSE\n");
+    //printf("VLC_END_PARSE\n");
 
     long long id = 0;
       
