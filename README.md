@@ -1,1 +1,1 @@
-JoshPlayer
+MediaPlaymer
